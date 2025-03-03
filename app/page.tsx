@@ -1,18 +1,64 @@
 'use client'
 
-import React, { useState } from 'react';
+import { $axios } from '@/https/api';
+import { useRouter } from 'next/navigation';
+import React, { FormEvent, useEffect, useState } from 'react';
+
+interface TasksType {
+  _id: string,
+  date: string,
+  description: string
+}
 
 const MainPage = () => {
+  const router = useRouter()
+  const [tasks, setTasks] = useState<TasksType[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [day, setDay] = useState('');
   const [description, setDescription] = useState('');
 
+  const [selected, setSelected] = useState<TasksType | null>(null)
+
+
+  const selectItem = (task: TasksType) => {
+    setIsViewModalOpen(true)
+    setSelected(task)
+  }
+
+  const handleAddDay = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    try {
+      const res = await $axios.post('/task/create', { date: day, description })
+      setTasks(prev => [...prev, res.data.task])
+      setIsModalOpen(false)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      router.push('/signin')
+      return
+    }
+    const getTasks = async () => {
+      const res = await $axios.get('/task/get')
+      setTasks(res.data.tasks)
+      console.log(res)
+    }
+    getTasks()
+  }, [])
+
   return (
     <div className='max-w-[1200px] mx-auto p-6  min-h-screen relative'>
       <nav className='flex items-center py-4 justify-between bg-white shadow-md px-6 rounded-lg'>
         <h1 className='text-2xl font-bold text-gray-800'>Tasks</h1>
-        <button className='px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition'>Logout</button>
+        <button onClick={() => {
+          localStorage.clear()
+          router.push('/signin')
+        }} className='px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition'>Logout</button>
       </nav>
       <div className='mt-6 bg-white p-6 shadow-lg rounded-lg'>
         <table className='w-full border-collapse'>
@@ -23,14 +69,12 @@ const MainPage = () => {
             </tr>
           </thead>
           <tbody>
-            <tr className='border-b hover:bg-gray-100' onClick={() => setIsViewModalOpen(true)}>
-              <td className='py-2 px-4'>Monday</td>
-              <td className='py-2 px-4'>Project Meeting</td>
-            </tr>
-            <tr className='border-b hover:bg-gray-100' onClick={() => setIsViewModalOpen(true)}>
-              <td className='py-2 px-4'>Tuesday</td>
-              <td className='py-2 px-4'>Coding Session</td>
-            </tr>
+            {tasks && tasks.map(item => (
+              <tr key={item._id} className='border-b hover:bg-gray-100' onClick={() => selectItem(item)}>
+                <td className='py-2 px-4'>{item.date}</td>
+                <td className='py-2 px-4'>{item.description.length >= 30 ? item.description.slice(0, 30) : item.description}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -44,7 +88,7 @@ const MainPage = () => {
 
       {isModalOpen && (
         <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4'>
-          <div className='bg-white p-6 rounded-lg shadow-xl max-w-md w-full transform scale-100 transition-transform duration-200 ease-out'>
+          <form onSubmit={handleAddDay} className='bg-white p-6 rounded-lg shadow-xl max-w-md w-full transform scale-100 transition-transform duration-200 ease-out'>
             <h2 className='text-xl font-bold mb-4 text-gray-800'>Add Task</h2>
             <input
               type='text'
@@ -62,6 +106,7 @@ const MainPage = () => {
             />
             <div className='flex justify-end space-x-2'>
               <button
+                type="button"
                 className='px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition'
                 onClick={() => setIsModalOpen(false)}
               >
@@ -69,20 +114,20 @@ const MainPage = () => {
               </button>
               <button
                 className='px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition'
-                onClick={() => setIsModalOpen(false)}
+                type='submit'
               >
                 Save
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
       {isViewModalOpen && (
         <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4'>
           <div className='bg-white p-6 rounded-lg shadow-xl max-w-md w-full transform scale-100 transition-transform duration-200 ease-out'>
-            <h2 className='text-xl font-bold mb-4 text-gray-800'>View Task</h2>
-            <p className='text-gray-700'>Today I make a full stack app with Node.js and Express.</p>
+            <h2 className='text-xl font-bold mb-4 text-gray-800'>Date: <strong>{selected && selected.date}</strong></h2>
+            <p className='text-gray-700'>{selected && selected.description}</p>
             <div className='flex justify-end mt-4'>
               <button
                 className='px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition'

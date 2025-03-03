@@ -1,15 +1,30 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { $axios } from '@/https/api';
+import { useRouter } from 'next/navigation';
+import { FormEvent, useEffect, useState } from 'react';
 
 export default function SignIn() {
+      const router = useRouter()
       const [email, setEmail] = useState('');
       const [password, setPassword] = useState('');
       const [loading, setLoading] = useState(false)
-      const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+      const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
             setLoading(true)
             e.preventDefault();
-            console.log({ email, password });
+            try {
+                  const res = await $axios.post('/user/login', {
+                        email,
+                        password
+                  })
+                  localStorage.setItem('token', res.data.token)
+                  router.push('/')
+            } catch (error) {
+                  console.log(error)
+            } finally {
+                  setLoading(false)
+            }
+
       };
 
       return (
@@ -41,7 +56,7 @@ export default function SignIn() {
                                     type="submit"
                                     className="w-full p-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                               >
-                                    {loading ? <div></div> : "Sign In"}
+                                    {loading ? <div>Loading...</div> : "Sign In"}
                               </button>
                         </form>
                   </div>
