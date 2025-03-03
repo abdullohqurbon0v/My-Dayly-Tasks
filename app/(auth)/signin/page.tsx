@@ -2,7 +2,7 @@
 
 import { $axios } from '@/https/api';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useState } from 'react';
 
 export default function SignIn() {
       const router = useRouter()

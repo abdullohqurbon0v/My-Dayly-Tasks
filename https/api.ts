@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 export const $axios = axios.create({
-      baseURL: "http://localhost:8080/api",
+      baseURL: "https://my-dayly-tasks.onrender.com/api",
 })
 
 $axios.interceptors.request.use(
